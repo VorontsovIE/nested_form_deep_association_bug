@@ -1,6 +1,6 @@
 == Bug description
 
-Copy of my issue in nested_form repo (https://github.com/ryanb/nested_form/issues)
+Copy of my issue in nested_form repo (https://github.com/ryanb/nested_form/issues/267)
 
 I experienced a bug with deep nested form.
 Saying short: when intermediate association (book in library-->book-->story) have no attributes on form except nested attributes - then nested_form generates wrong ids(all the same) so that the only story can be obtained in controller from params hash.
@@ -69,7 +69,7 @@ Then I remove input for book name (photo collection in portfolio can be without 
 
     {"library"=>{"name_of_library"=>"Babylon library", "books_attributes"=>{"0"=>{"stories_attributes"=>{"1368882731158"=>{"subtitle"=>"False story", "_destroy"=>"false"}}}}}}
 
-One can get an application at ....... and try to run `/libraries/new` (this app is rails 4.0.rc1 but nested_form on rails 3 experience exactly the same problem) and try it with book title in form or without. You can just remove `=` signs not to render these fields:
+One can get an application at https://github.com/prijutme4ty/nested_form_deep_association_bug and try to run `/libraries/new` (this app is rails 4.0.rc1 but nested_form on rails 3 experience exactly the same problem) and try it with book title in form or without. You can just remove `=` signs not to render these fields:
 
     <%= book_f.label :title %>
     <%= book_f.text_field :title %>

@@ -1,0 +1,78 @@
+== Bug description
+
+Copy of my issue in nested_form repo (https://github.com/ryanb/nested_form/issues)
+
+I experienced a bug with deep nested form.
+Saying short: when intermediate association (book in library-->book-->story) have no attributes on form except nested attributes - then nested_form generates wrong ids(all the same) so that the only story can be obtained in controller from params hash.
+
+I have three models:
+
+    class Library < ActiveRecord::Base
+      has_many :books
+      accepts_nested_attributes_for :books
+    end
+    class Book < ActiveRecord::Base
+      belongs_to :library
+      has_many :stories
+      accepts_nested_attributes_for :stories
+    end
+    class Story < ActiveRecord::Base
+      belongs_to :book
+    end
+
+And a libraries controller:
+
+    class LibrariesController < ApplicationController
+      def new
+        @library = Library.new
+        @library.books.build
+      end
+
+      def create
+        render text: params.inspect
+      end
+    end
+
+My form for library looks in such a way:
+
+    <%= nested_form_for(@library) do |f| %>
+      <div class="field">
+        <%= f.label :name_of_library %><br>
+        <%= f.text_field :name_of_library %>
+        
+        <%= f.fields_for :books  do |book_f| %>
+          <%= book_f.label :title %>
+          <%= book_f.text_field :title %>
+          
+          <%= book_f.fields_for :stories do |story_f| %>
+            <%= story_f.label :subtitle %>
+            <%= story_f.text_field :subtitle %>
+            
+            <%= story_f.link_to_remove 'Remove story' %>
+          <% end %>
+          
+          <%= book_f.link_to_add 'Add story', :stories %>
+        <% end %>
+      </div>
+      <div class="actions">
+        <%= f.submit %>
+      </div>
+    <% end %> 
+
+When I create a library I automatically fill it with one book consisting of several stories (it looks weird, but in initial task there were portfolios and one photo collection full of photos associated to it which makes more sense).
+
+I add two stories to a book. All works ok, and my params hash after sending a request (here I removed unnecessary fields) is:
+
+    {"library"=>{"name_of_library"=>"Babylon library", "books_attributes"=>{"0"=>{"title"=>"Book of books", "stories_attributes"=>{"1368882624930"=>{"subtitle"=>"True story", "_destroy"=>"false"}, "1368882631410"=>{"subtitle"=>"False story", "_destroy"=>"false"}}}}}}
+
+Then I remove input for book name (photo collection in portfolio can be without name) from the form, fill the rest fields the same way and get the only story because now all inputs on the form have the same id, and latter stories rewrite older stories. Params hash is:
+
+    {"library"=>{"name_of_library"=>"Babylon library", "books_attributes"=>{"0"=>{"stories_attributes"=>{"1368882731158"=>{"subtitle"=>"False story", "_destroy"=>"false"}}}}}}
+
+One can get an application at ....... and try to run `/libraries/new` (this app is rails 4.0.rc1 but nested_form on rails 3 experience exactly the same problem) and try it with book title in form or without. You can just remove `=` signs not to render these fields:
+
+    <%= book_f.label :title %>
+    <%= book_f.text_field :title %>
+
+I don't understand what exactly is wrong with inputs on form, but they're obviously unexpected.
+Also this bug exists only on unsaved associations, if I save intermediate books association before rendering form - all works (but creating objects in `#new` action is the very wrong way). 
